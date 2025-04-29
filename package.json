@@ -4,7 +4,8 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "node --watch server.js"
+    "start": "NODE_ENV=PRODUCTION node server.js",
+    "dev": "NODE_ENV=DEVELOPMENT nodemon server.js"
   },
   "keywords": [],
   "author": "",

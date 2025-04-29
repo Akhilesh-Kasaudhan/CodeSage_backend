@@ -1,2 +1,13 @@
+# .gitignore
 .env
+.env.local
+.env.development
+.env.test
+.env.production
 node_modules/
+.DS_Store
+dist/
+build/
+*.log
+.idea/
+.vscode/
