@@ -36,7 +36,7 @@ You are an expert AI Code Reviewer. Review the following code written in **${
 
 ### 🛠️ Improved Code
 
-Return a fully updated version of the code with your suggestions implemented.
+Return a fully updated version of the code with your suggestions implemented also separate it from the feedback or review so that the user can copy the code and use it elsewhwere.
 
 ---
 

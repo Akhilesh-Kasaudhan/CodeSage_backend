@@ -15,12 +15,18 @@ export const register = async (req, res, next) => {
   const { username, email, password } = req.body;
   try {
     if (!username || !email || !password) {
-      throw new BadRequestError("Please provide username, email, and password");
+      return res.status(400).json({
+        message: "Please provide username, email, and password",
+      });
+      //   throw new BadRequestError("Please provide username, email, and password");
     }
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return next(new BadRequestError("Username or email already exists."));
+      return res.status(400).json({
+        message: "Username or email already exists.",
+      });
+      // return next(new BadRequestError("Username or email already exists."));
     }
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = new User({
@@ -39,7 +45,11 @@ export const register = async (req, res, next) => {
       },
     });
   } catch (error) {
-    next(error);
+    // next(error);
+    return res.status(500).json({
+      message: "Internal server error",
+      error: error.message,
+    });
   }
 };
 
@@ -47,18 +57,27 @@ export const login = async (req, res, next) => {
   const { email, password } = req.body;
   try {
     if (!email || !password) {
-      throw new BadRequestError("Please provide email and password");
+      return res.status(400).json({
+        message: "Please provide email and password",
+      });
+      // throw new BadRequestError("Please provide email and password");
     }
 
     const user = await User.findOne({ email });
     if (!user) {
-      throw new UnauthorizedError("Invalid credentials");
+      // throw new UnauthorizedError("Invalid credentials");
+      return res.status(401).json({
+        message: "Invalid credentials",
+      });
     }
 
     // Check if the password is correct
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      throw new UnauthorizedError("Invalid credentials");
+      // throw new UnauthorizedError("Invalid credentials");
+      return res.status(401).json({
+        message: "Invalid credentials",
+      });
     }
     // Generate tokens
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
@@ -95,7 +114,11 @@ export const login = async (req, res, next) => {
       expiresIn: ACCESS_TOKEN_EXPIRY,
     });
   } catch (error) {
-    next(error);
+    // next(error);
+    return res.status(500).json({
+      message: "Internal server error",
+      error: error.message,
+    });
   }
 };
 
@@ -104,14 +127,20 @@ export const refreshToken = async (req, res, next) => {
 
   try {
     if (!refreshToken) {
-      throw new UnauthorizedError("Refresh token is required");
+      // throw new UnauthorizedError("Refresh token is required");
+      return res.status(401).json({
+        message: "Refresh token is required",
+      });
     }
 
     const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
     const user = await User.findById(decoded.userId);
 
     if (!user || !user.refreshTokens.includes(refreshToken)) {
-      throw new UnauthorizedError("Invalid refresh token");
+      // throw new UnauthorizedError("Invalid refresh token");
+      return res.status(401).json({
+        message: "Invalid refresh token",
+      });
     }
 
     // Generate new access token
@@ -127,7 +156,16 @@ export const refreshToken = async (req, res, next) => {
       expiresIn: ACCESS_TOKEN_EXPIRY,
     });
   } catch (error) {
-    next(error);
+    // next(error);
+    if (error.name === "TokenExpiredError") {
+      return res.status(401).json({
+        message: "Refresh token expired",
+      });
+    }
+    return res.status(500).json({
+      message: "Internal server error",
+      error: error.message,
+    });
   }
 };
 
@@ -136,7 +174,10 @@ export const logout = async (req, res, next) => {
 
   try {
     if (!refreshToken) {
-      throw new BadRequestError("Refresh token is required");
+      // throw new BadRequestError("Refresh token is required");
+      return res.status(400).json({
+        message: "Refresh token is required",
+      });
     }
 
     const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
@@ -164,6 +205,10 @@ export const logout = async (req, res, next) => {
   } catch (error) {
     // Even if token is invalid, clear the cookie
     res.clearCookie("refreshToken");
-    next(error);
+    // next(error);
+    return res.status(500).json({
+      message: "Internal server error",
+      error: error.message,
+    });
   }
 };
