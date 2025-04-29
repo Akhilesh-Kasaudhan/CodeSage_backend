@@ -11,7 +11,6 @@ dotenv.config();
 
 const port = process.env.PORT || 3000;
 const clientURL = process.env.CLIENT_URL || "http://localhost:5173";
-console.log(clientURL);
 app.use(
   cors({
     origin: ["http://localhost:5173", clientURL],
