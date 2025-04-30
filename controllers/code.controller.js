@@ -87,6 +87,31 @@ ${code}
   }
 };
 
+// export const getCodeHistory = async (req, res) => {
+//   const userId = req.userId;
+//   if (!userId) {
+//     return res.status(400).json({ message: "Unauthorized: userId missing." });
+//   }
+//   try {
+//     const codeHistory = await Code.find({ userId: req.userId }).sort({
+//       submissionDate: -1,
+//     });
+//     if (codeHistory.length === 0) {
+//       return res.status(404).json({ message: "No code history found." });
+//       // return next(new BadRequestError("No code history found.")); // Changed to BadRequestError
+//     }
+//     res
+//       .status(200)
+//       .json({ message: "Code history retrieved successfully.", codeHistory });
+//   } catch (error) {
+//     // return next(new InternalServerError("Internal server error"));
+//     res.status(500).json({
+//       message: "Internal server error",
+//       error: error.message,
+//     });
+//   }
+// };
+
 export const getCodeHistory = async (req, res) => {
   const userId = req.userId;
   if (!userId) {
