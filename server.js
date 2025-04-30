@@ -11,13 +11,33 @@ dotenv.config();
 
 const port = process.env.PORT || 3000;
 const clientURL = process.env.CLIENT_URL || "http://localhost:5173";
+const allowedOrigins = [
+  "http://localhost:5173",
+  clientURL,
+  "https://codesageai.netlify.app.",
+];
+
 app.use(
   cors({
-    origin: ["http://localhost:5173", clientURL],
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+
+      if (
+        allowedOrigins.includes(origin) ||
+        allowedOrigins.some((allowed) => origin.includes(allowed))
+      ) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+
 app.use(bodyParser.json());
 
 app.use(bodyParser.urlencoded({ extended: true }));
