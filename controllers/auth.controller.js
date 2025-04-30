@@ -15,6 +15,7 @@ export const register = async (req, res, next) => {
   const { username, email, password } = req.body;
   try {
     if (!username || !email || !password) {
+      console.log("Missing fields in registration request");
       return res.status(400).json({
         message: "Please provide username, email, and password",
       });
@@ -23,6 +24,7 @@ export const register = async (req, res, next) => {
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
+      console.log("User already exists with this email");
       return res.status(400).json({
         message: "Username or email already exists.",
       });
@@ -45,7 +47,7 @@ export const register = async (req, res, next) => {
       },
     });
   } catch (error) {
-    // next(error);
+    console.log("Error during registration:", error);
     return res.status(500).json({
       message: "Internal server error",
       error: error.message,
@@ -57,6 +59,7 @@ export const login = async (req, res, next) => {
   const { email, password } = req.body;
   try {
     if (!email || !password) {
+      console.log("Missing fields in login request");
       return res.status(400).json({
         message: "Please provide email and password",
       });
@@ -66,6 +69,7 @@ export const login = async (req, res, next) => {
     const user = await User.findOne({ email });
     if (!user) {
       // throw new UnauthorizedError("Invalid credentials");
+      console.log("User not found with this email");
       return res.status(401).json({
         message: "Invalid credentials",
       });
@@ -75,6 +79,7 @@ export const login = async (req, res, next) => {
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       // throw new UnauthorizedError("Invalid credentials");
+      console.log("Invalid password for this user");
       return res.status(401).json({
         message: "Invalid credentials",
       });
@@ -115,6 +120,7 @@ export const login = async (req, res, next) => {
     });
   } catch (error) {
     // next(error);
+    console.log("Error during login:", error);
     return res.status(500).json({
       message: "Internal server error",
       error: error.message,
@@ -128,6 +134,7 @@ export const refreshToken = async (req, res, next) => {
   try {
     if (!refreshToken) {
       // throw new UnauthorizedError("Refresh token is required");
+      console.log("Refresh token is required");
       return res.status(401).json({
         message: "Refresh token is required",
       });
@@ -138,6 +145,7 @@ export const refreshToken = async (req, res, next) => {
 
     if (!user || !user.refreshTokens.includes(refreshToken)) {
       // throw new UnauthorizedError("Invalid refresh token");
+      console.log("Invalid refresh token");
       return res.status(401).json({
         message: "Invalid refresh token",
       });
@@ -157,6 +165,7 @@ export const refreshToken = async (req, res, next) => {
     });
   } catch (error) {
     // next(error);
+    console.log("Error during token refresh:", error);
     if (error.name === "TokenExpiredError") {
       return res.status(401).json({
         message: "Refresh token expired",
