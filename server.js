@@ -10,7 +10,10 @@ const app = express();
 dotenv.config();
 
 const port = process.env.PORT || 3000;
-const clientURL = process.env.CLIENT_URL || "http://localhost:5173";
+const clientURL =
+  process.env.CLIENT_URL ||
+  "http://localhost:5173" ||
+  "https://codesageai.netlify.app";
 const allowedOrigins = [
   "http://localhost:5173",
   clientURL,
