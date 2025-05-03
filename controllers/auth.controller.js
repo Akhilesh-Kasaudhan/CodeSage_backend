@@ -1,11 +1,6 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/user.model.js";
-import {
-  BadRequestError,
-  InternalServerError,
-  UnauthorizedError,
-} from "../utils/error.js";
 
 // Token expiration times from .env
 const ACCESS_TOKEN_EXPIRY = process.env.ACCESS_TOKEN_EXPIRY || "15m";

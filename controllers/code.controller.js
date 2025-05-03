@@ -1,6 +1,5 @@
 import Code from "../models/code.model.js";
 import { generateContent } from "../lib/geminiService.js";
-import { BadRequestError, InternalServerError } from "../utils/error.js";
 
 export const submitCode = async (req, res, next) => {
   const { code, language } = req.body;

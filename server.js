@@ -1,61 +1,3 @@
-// import express from "express";
-// import bodyParser from "body-parser";
-// import cors from "cors";
-// import dotenv from "dotenv";
-// import { connectDB } from "./lib/connection.js";
-// import authRoutes from "./routes/auth.route.js";
-// import codeRoutes from "./routes/code.route.js";
-// import globalErrorHandler from "./middlewares/error.middleware.js";
-
-// const app = express();
-// dotenv.config();
-
-// const port = process.env.PORT || 3000;
-
-// // ✅ CORS setup — don't include backend URL in origins
-// const allowedOrigins = [
-//   "http://localhost:5173",
-//   "https://codesageai.netlify.app",
-// ];
-
-// app.use(
-//   cors({
-//     origin: function (origin, callback) {
-//       if (!origin || allowedOrigins.includes(origin)) {
-//         callback(null, true);
-//       } else {
-//         callback(new Error("Not allowed by CORS"));
-//       }
-//     },
-//     credentials: true,
-//   })
-// );
-
-// // ✅ Handle preflight requests
-// app.options("*", cors());
-
-// // ✅ Body parsers
-// app.use(bodyParser.json());
-// app.use(bodyParser.urlencoded({ extended: true }));
-// app.use(express.static("public"));
-
-// // ✅ Health check
-// app.get("/health", (req, res) => res.sendStatus(200));
-
-// // ✅ Routes
-// app.use("/api/auth", authRoutes);
-// app.use("/api/code", codeRoutes);
-
-// // ✅ Error handler
-// app.use(globalErrorHandler);
-
-// // ✅ Start server
-// app.listen(port, () => {
-//   console.log(`Server is running on port: ${port}`);
-//   connectDB();
-// });
-
-// Modified server.js
 import express from "express";
 import bodyParser from "body-parser";
 import cors from "cors";
@@ -63,7 +5,6 @@ import dotenv from "dotenv";
 import { connectDB } from "./lib/connection.js";
 import authRoutes from "./routes/auth.route.js";
 import codeRoutes from "./routes/code.route.js";
-import globalErrorHandler from "./middlewares/error.middleware.js";
 
 const app = express();
 dotenv.config();
@@ -86,16 +27,16 @@ app.use(
       }
     },
     credentials: true,
-    preflightContinue: false,
-    optionsSuccessStatus: 204,
+    // preflightContinue: false,
+    // optionsSuccessStatus: 204,
+    allowedHeaders: "Content-Type,Authorization",
+    methods: "GET,POST,PUT,DELETE",
   })
 );
 
-// ✅ Handle preflight requests
-// app.options("*", cors());
-
 // ✅ Body parsers
 app.use(bodyParser.json());
+app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
 
@@ -120,8 +61,12 @@ try {
   console.error("Error registering code routes:", error);
 }
 
-// ✅ Error handler
-app.use(globalErrorHandler);
+//error handler
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ message: "Something happend in the backend!" });
+  next(err);
+});
 
 // ✅ Start server
 app.listen(port, () => {
