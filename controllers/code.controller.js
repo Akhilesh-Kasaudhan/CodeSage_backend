@@ -1,16 +1,21 @@
 import Code from "../models/code.model.js";
 import { generateContent } from "../lib/geminiService.js";
+import {
+  BadRequestError,
+  UnauthorizedError,
+  InternalServerError,
+} from "../utils/error.js";
 
 export const submitCode = async (req, res, next) => {
   const { code, language } = req.body;
   const userId = req.userId;
 
   if (!userId) {
-    return res.status(400).json({ message: "Unauthorized: userId missing." });
+    return next(new UnauthorizedError("Unauthorized: userId missing."));
   }
 
   if (!code) {
-    return res.status(400).json({ message: "Please provide code to review." });
+    return next(new BadRequestError("Please provide code to review."));
   }
 
   try {
@@ -55,9 +60,9 @@ ${code}
     const reviewResult = await generateContent(prompt);
 
     if (!reviewResult) {
-      return res
-        .status(500)
-        .json({ message: "Error generating review. Please try again." });
+      return next(
+        new InternalServerError("Error generating review. Please try again.")
+      );
     }
 
     const newCodeSubmission = new Code({
@@ -80,41 +85,16 @@ ${code}
 
     res.end();
   } catch (error) {
-    return res
-      .status(500)
-      .json({ message: "Internal server error", error: error.message });
+    return next(
+      new InternalServerError("Internal server error during code submission")
+    );
   }
 };
-
-// export const getCodeHistory = async (req, res) => {
-//   const userId = req.userId;
-//   if (!userId) {
-//     return res.status(400).json({ message: "Unauthorized: userId missing." });
-//   }
-//   try {
-//     const codeHistory = await Code.find({ userId: req.userId }).sort({
-//       submissionDate: -1,
-//     });
-//     if (codeHistory.length === 0) {
-//       return res.status(404).json({ message: "No code history found." });
-//       // return next(new BadRequestError("No code history found.")); // Changed to BadRequestError
-//     }
-//     res
-//       .status(200)
-//       .json({ message: "Code history retrieved successfully.", codeHistory });
-//   } catch (error) {
-//     // return next(new InternalServerError("Internal server error"));
-//     res.status(500).json({
-//       message: "Internal server error",
-//       error: error.message,
-//     });
-//   }
-// };
 
 export const getCodeHistory = async (req, res) => {
   const userId = req.userId;
   if (!userId) {
-    return res.status(400).json({ message: "Unauthorized: userId missing." });
+    return next(new UnauthorizedError("Unauthorized: userId missing."));
   }
   try {
     const codeHistory = await Code.find({ userId: req.userId }).sort({
@@ -128,10 +108,10 @@ export const getCodeHistory = async (req, res) => {
       .status(200)
       .json({ message: "Code history retrieved successfully.", codeHistory });
   } catch (error) {
-    // return next(new InternalServerError("Internal server error"));
-    res.status(500).json({
-      message: "Internal server error",
-      error: error.message,
-    });
+    return next(
+      new InternalServerError(
+        "Internal server error while fetching code history"
+      )
+    );
   }
 };

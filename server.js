@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import { connectDB } from "./lib/connection.js";
 import authRoutes from "./routes/auth.route.js";
 import codeRoutes from "./routes/code.route.js";
+import errorHandler from "./middlewares/errorHandler.js";
 
 const app = express();
 dotenv.config();
@@ -62,11 +63,13 @@ try {
 }
 
 //error handler
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: "Something happend in the backend!" });
-  next(err);
-});
+// app.use((err, req, res, next) => {
+//   console.error(err.stack);
+//   res.status(500).json({ message: "Something happend in the backend!" });
+//   next(err);
+// });
+
+app.use(errorHandler);
 
 // ✅ Start server
 app.listen(port, () => {
