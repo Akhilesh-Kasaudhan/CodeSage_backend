@@ -97,6 +97,8 @@ export const getCodeHistory = async (req, res) => {
     return next(new UnauthorizedError("Unauthorized: userId missing."));
   }
   try {
+    const hitoryCount = await Code.countDocuments({ userId });
+    console.log(`History count: ${hitoryCount}`);
     const codeHistory = await Code.find({ userId: req.userId }).sort({
       submissionDate: -1,
     });
@@ -111,6 +113,44 @@ export const getCodeHistory = async (req, res) => {
     return next(
       new InternalServerError(
         "Internal server error while fetching code history"
+      )
+    );
+  }
+};
+
+export const deleteCodeHistory = async (req, res) => {
+  const userId = req.userId;
+  if (!userId) {
+    return next(new UnauthorizedError("Unauthorized: userId missing."));
+  }
+  try {
+    const { codeId } = req.params;
+    const deletedCode = await Code.findOneAndDelete({
+      _id: codeId,
+      userId: req.userId,
+    });
+    if (!deletedCode) {
+      return res.status(404).json({ message: "Code not found." });
+    }
+    res.status(200).json({ message: "Code deleted successfully." });
+  } catch (error) {
+    return next(
+      new InternalServerError("Internal server error while deleting code")
+    );
+  }
+};
+export const deleteAllCodeHistory = async (req, res) => {
+  const userId = req.userId;
+  if (!userId) {
+    return next(new UnauthorizedError("Unauthorized: userId missing."));
+  }
+  try {
+    await Code.deleteMany({ userId: req.userId });
+    res.status(200).json({ message: "All code history deleted successfully." });
+  } catch (error) {
+    return next(
+      new InternalServerError(
+        "Internal server error while deleting all code history"
       )
     );
   }
