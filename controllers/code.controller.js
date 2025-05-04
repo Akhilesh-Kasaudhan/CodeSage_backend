@@ -155,3 +155,22 @@ export const deleteAllCodeHistory = async (req, res) => {
     );
   }
 };
+
+//deleteCodeHistory of a specific user
+export const deleteCodeHistoryOfUser = async (req, res) => {
+  const userId = req.userId;
+  if (!userId) {
+    return next(new UnauthorizedError("Unauthorized: userId missing."));
+  }
+  try {
+    const deleteCode = await Code.deleteMany({ userId: req.userId });
+    if (!deleteCode) {
+      return res.status(404).json({ message: "Code not found." });
+    }
+    res.status(200).json({ message: "Code deleted successfully." });
+  } catch (error) {
+    return next(
+      new InternalServerError("Internal server error while deleting code")
+    );
+  }
+};
