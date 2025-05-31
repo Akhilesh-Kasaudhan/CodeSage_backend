@@ -98,13 +98,11 @@ export const getCodeHistory = async (req, res) => {
   }
   try {
     const hitoryCount = await Code.countDocuments({ userId });
-    console.log(`History count: ${hitoryCount}`);
     const codeHistory = await Code.find({ userId: req.userId }).sort({
       submissionDate: -1,
     });
     if (codeHistory.length === 0) {
       return res.status(404).json({ message: "No code history found." });
-      // return next(new BadRequestError("No code history found.")); // Changed to BadRequestError
     }
     res
       .status(200)

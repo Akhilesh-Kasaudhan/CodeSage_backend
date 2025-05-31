@@ -41,12 +41,6 @@ app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
 
-// ✅ Health check
-app.get("/health", (req, res) => res.sendStatus(200));
-
-// Debug logging for route registration
-console.log("About to register routes...");
-
 // ✅ Routes with proper error handling
 try {
   app.use("/api/auth", authRoutes);
@@ -61,13 +55,6 @@ try {
 } catch (error) {
   console.error("Error registering code routes:", error);
 }
-
-//error handler
-// app.use((err, req, res, next) => {
-//   console.error(err.stack);
-//   res.status(500).json({ message: "Something happend in the backend!" });
-//   next(err);
-// });
 
 app.use(errorHandler);
 
