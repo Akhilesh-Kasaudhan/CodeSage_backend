@@ -7,7 +7,6 @@ import {
   InternalServerError,
 } from "../utils/error.js";
 
-// Token expiration times from .env
 const ACCESS_TOKEN_EXPIRY = process.env.ACCESS_TOKEN_EXPIRY || "1d";
 const REFRESH_TOKEN_EXPIRY = process.env.REFRESH_TOKEN_EXPIRY || "7d";
 
@@ -15,7 +14,6 @@ export const register = async (req, res, next) => {
   const { username, email, password } = req.body;
   try {
     if (!username || !email || !password) {
-      console.log("Missing fields in registration request");
       return next(
         new BadRequestError("Please provide username, email, and password")
       );
@@ -23,7 +21,6 @@ export const register = async (req, res, next) => {
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      console.log("User already exists with this email");
       return next(new BadRequestError("Username or email already exists."));
     }
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -34,16 +31,38 @@ export const register = async (req, res, next) => {
       refreshTokens: [],
     });
     await newUser.save();
+
+    const token = jwt.sign({ userId: newUser._id }, process.env.JWT_SECRET, {
+      expiresIn: ACCESS_TOKEN_EXPIRY,
+    });
+    const refreshToken = jwt.sign(
+      { userId: newUser._id },
+      process.env.JWT_REFRESH_SECRET,
+      { expiresIn: REFRESH_TOKEN_EXPIRY }
+    );
+
+    newUser.refreshTokens.push(refreshToken);
+    await newUser.save();
+
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      sameSite: "strict",
+    });
+
     res.status(201).json({
-      message: "User registered successfully",
+      success: true,
+      message: "User registered and logged in successfully",
       user: {
         id: newUser._id,
         username: newUser.username,
         email: newUser.email,
       },
+      token,
+      expiresIn: ACCESS_TOKEN_EXPIRY,
     });
   } catch (error) {
-    console.log("Error during registration:", error);
     return next(new InternalServerError("Error during user registration"));
   }
 };
@@ -52,19 +71,16 @@ export const login = async (req, res, next) => {
   const { email, password } = req.body;
   try {
     if (!email || !password) {
-      console.log("Missing fields in login request");
       return next(new BadRequestError("Please provide email and password"));
     }
 
     const user = await User.findOne({ email });
     if (!user) {
-      console.log("User not found with this email");
       return next(new UnauthorizedError("Invalid credentials"));
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      console.log("Invalid password for this user");
       return next(new UnauthorizedError("Invalid credentials"));
     }
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
@@ -99,7 +115,6 @@ export const login = async (req, res, next) => {
       expiresIn: ACCESS_TOKEN_EXPIRY,
     });
   } catch (error) {
-    console.log("Error during login:", error);
     return next(new InternalServerError("Error during user login"));
   }
 };
@@ -109,7 +124,6 @@ export const refreshToken = async (req, res, next) => {
 
   try {
     if (!refreshToken) {
-      console.log("Refresh token is required");
       return next(new UnauthorizedError("Refresh token is required"));
     }
 
@@ -117,7 +131,6 @@ export const refreshToken = async (req, res, next) => {
     const user = await User.findById(decoded.userId);
 
     if (!user || !user.refreshTokens.includes(refreshToken)) {
-      console.log("Invalid refresh token");
       return next(new UnauthorizedError("Invalid refresh token"));
     }
 
@@ -133,7 +146,9 @@ export const refreshToken = async (req, res, next) => {
       expiresIn: ACCESS_TOKEN_EXPIRY,
     });
   } catch (error) {
-    console.log("Error during token refresh:", error);
+    if (error.name === "JsonWebTokenError") {
+      return next(new UnauthorizedError("Invalid refresh token"));
+    }
     if (error.name === "TokenExpiredError") {
       return res.status(401).json({
         message: "Refresh token expired",
@@ -148,7 +163,6 @@ export const logout = async (req, res, next) => {
 
   try {
     if (!refreshToken) {
-      console.log("Refresh token is required for logout");
       return next(new BadRequestError("Refresh token is required"));
     }
 
@@ -174,7 +188,7 @@ export const logout = async (req, res, next) => {
     });
   } catch (error) {
     res.clearCookie("refreshToken");
-    console.log("Error during logout:", error);
+
     return next(new InternalServerError("Error during logout"));
   }
 };

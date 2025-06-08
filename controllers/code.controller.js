@@ -97,12 +97,13 @@ export const getCodeHistory = async (req, res) => {
     return next(new UnauthorizedError("Unauthorized: userId missing."));
   }
   try {
-    const hitoryCount = await Code.countDocuments({ userId });
     const codeHistory = await Code.find({ userId: req.userId }).sort({
       submissionDate: -1,
     });
     if (codeHistory.length === 0) {
-      return res.status(404).json({ message: "No code history found." });
+      return res
+        .status(200)
+        .json({ message: "No code history found.", codeHistory: [] });
     }
     res
       .status(200)
