@@ -24,69 +24,69 @@ You are an expert AI Code Reviewer. Review the following code written in **${
       language || "an unspecified language"
     }** and provide a structured, markdown-formatted response that includes:
 
----
-
 ### 🔍 Code Review
-
-1. 🐞 **Bugs & Logical Errors** – Point out any functional or runtime issues.
-2. 🎯 **Code Quality & Best Practices** – Evaluate readability, structure, naming conventions, and maintainability.
-3. 🔐 **Security Issues** – Highlight any potential vulnerabilities and suggest improvements.
-4. ⚡ **Performance Optimizations** – Recommend improvements for speed and efficiency.
-5. 💡 **Feature Enhancements** – Suggest cleaner, modern, or idiomatic approaches.
-6. 🎨 **UI/UX Improvements** – If applicable, offer design, accessibility, and user experience enhancements.
-7. 🧪 **Testing Recommendations** – Suggest any test cases or coverage improvements.
-
----
+1. Bugs & Logical Errors  
+2. Code Quality  
+3. Security Issues  
+4. Performance Optimizations  
+5. Feature Enhancements  
+6. UI/UX Improvements (if applicable)  
+7. Testing Recommendations  
 
 ### 🛠️ Improved Code
-
-Return a fully updated version of the code with your suggestions implemented also separate it from the feedback or review so that the user can copy the code and use it elsewhwere.
-
----
+Provide a clean, updated version of the code.
 
 ### 📋 Summary of Changes
+Provide a list summarizing improvements.
 
-Provide a bullet-point list summarizing all key changes and why they were made.
-
----
-
-Here is the code to review:
-
+Here is the code:
 \`\`\`${language || ""}
 ${code}
 \`\`\`
 `;
 
-    const reviewResult = await generateContent(prompt);
+    // ---------- FIX: handle new generateContent response format ----------
+    const aiResponse = await generateContent(prompt);
 
-    if (!reviewResult) {
+    if (!aiResponse.success) {
+      console.error("Gemini Generation Error:", aiResponse.error);
+
       return next(
-        new InternalServerError("Error generating review. Please try again.")
+        new InternalServerError(
+          aiResponse.error || "Error generating code review."
+        )
       );
     }
 
+    const reviewText = aiResponse.data;
+
+    // ---------- Save to DB ----------
     const newCodeSubmission = new Code({
       userId,
       code,
       language,
-      reviewResult,
+      reviewResult: reviewText,
     });
 
     await newCodeSubmission.save();
 
+    // ---------- Streaming Response ----------
     res.setHeader("Content-Type", "text/plain");
     res.setHeader("Transfer-Encoding", "chunked");
 
-    const chunks = reviewResult.match(/.{1,100}/g) || [reviewResult];
+    const chunks = reviewText.match(/.{1,150}/g) || [reviewText];
+
     for (const chunk of chunks) {
       res.write(chunk);
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      await new Promise((resolve) => setTimeout(resolve, 30));
     }
 
     res.end();
   } catch (error) {
+    console.error("Error during submitCode:", error);
+
     return next(
-      new InternalServerError("Internal server error during code submission")
+      new InternalServerError("Internal server error during code submission.")
     );
   }
 };
@@ -155,7 +155,6 @@ export const deleteAllCodeHistory = async (req, res) => {
   }
 };
 
-//deleteCodeHistory of a specific user
 export const deleteCodeHistoryOfUser = async (req, res) => {
   const userId = req.userId;
   if (!userId) {
